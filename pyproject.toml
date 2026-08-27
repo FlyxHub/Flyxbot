@@ -1,0 +1,39 @@
+[project]
+name = "flyxbot"
+version = "0.2.0"
+description = "A single-guild Discord bot."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "discord.py>=2.7,<3",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6"]
+
+# Declared explicitly so `pip install -e .` has a defined backend rather than
+# falling back to setuptools' deprecated legacy path.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["bot", "config"]
+packages = ["cogs"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "ASYNC",# blocking calls in async code
+    "SIM",  # simplifications
+    "RUF",
+]

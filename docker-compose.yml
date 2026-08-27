@@ -1,0 +1,36 @@
+# Start the bot with `docker compose up -d`. It needs a .env file next to this
+# one; copy .env.example and fill in DISCORD_TOKEN first.
+
+services:
+  flyxbot:
+    build: .
+    image: flyxbot:latest
+    container_name: flyxbot
+
+    # Read at container start, not at build time, so the token stays out of the
+    # image. Compose fails with "env file .env not found" if it doesn't exist.
+    env_file: .env
+
+    # The bot only makes outbound connections to Discord, so it publishes no
+    # ports and needs no network of its own.
+    restart: unless-stopped
+
+    # Python installs no SIGTERM handler, and the kernel ignores signals with a
+    # default disposition when they're sent to PID 1. Without an init to forward
+    # it, `docker compose stop` waits out the 10-second grace period and then
+    # SIGKILLs the bot every time.
+    init: true
+
+    # Nothing is written to disk, so the filesystem can stay read-only.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+    # A bot that runs for months otherwise fills the disk with JSON logs.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
