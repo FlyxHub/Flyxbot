@@ -4,46 +4,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Flyxbot is a single-guild Discord bot built on `discord.py` (v2.x — it uses `bot.tree`, `hybrid_command`, and async `load_extension`, all 2.0+ APIs). There is no README, requirements file, test suite, or lint config; the whole project is `bot.py` plus three cogs.
+Flyxbot is a single-guild Discord bot on `discord.py` 2.7 (Python 3.11+). The whole
+project is `bot.py`, `config.py`, and four cogs. There is no test suite; `ruff` is the
+only tooling (configured in `pyproject.toml`).
+
+See `README.md` for setup, required privileged intents, and the env-var table.
 
 ## Running
 
 ```
-pip install -U discord.py
+uv sync                # or: pip install -e .
 python bot.py
 ```
 
-**The bot does not run as checked in.** `bot.py` ends with `bot.run(TOKEN)`, but the `TOKEN` assignment is commented out (`#TOKEN = '(insert token here)'`) so the module raises `NameError` at startup. Restore a token definition — reading it from an env var (`os.environ["TOKEN"]`, `os` is already imported) is preferable to hardcoding, and keeps it out of commits.
+The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
+loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a
+readable message if no token is found.
 
 ## Architecture
 
-**Cog auto-loading happens in `on_ready`, not before `bot.run`.** `bot.py:11-16` walks the `cogs/` directory and turns each path into a module name via `root.replace("\\", ".")` — that only produces `cogs.funCommands` on Windows path separators. On POSIX the `/` is left intact and `load_extension` fails. Two other consequences of loading in `on_ready`:
+**Startup.** `Flyxbot.setup_hook` loads every non-underscore `.py` in `cogs/` via
+`Path.glob`, so it works on both Windows and POSIX and runs exactly once per process
+(unlike an `on_ready` handler, which re-fires on every reconnect).
 
-- `on_ready` fires again on every reconnect/resume, so a re-fire raises `ExtensionAlreadyLoaded`. Any change here should either move loading into `setup_hook` or guard against reloading.
-- `await bot.tree.sync()` runs in the same handler, so slash commands are re-synced globally on each ready.
+**Command tree is never auto-synced.** Syncing globally on each startup wastes rate
+limits, so `cogs/owner.py` owns a prefix-only `sync` command (owner-gated, the standard
+Umbra recipe). Any change to a command signature needs a manual `>sync ~`.
 
-Adding a command means dropping a `.py` file in `cogs/` with a `commands.Cog` subclass and an `async def setup(bot)` — no registration list to update.
+**Configuration.** All guild IDs live in `config.py` as a frozen `Settings` dataclass
+read from the environment, with the original guild's IDs as fallbacks. Never hardcode
+a snowflake in a cog — add a field to `Settings` and a line to `.env.example`.
+Note the inverted naming on `no_images_role_id`: it is a *restriction* role, so
+`takeimg` **adds** it and `giveimg` **removes** it.
 
-**Command surface.** Prefix is `>` and nearly everything is a `commands.hybrid_command`, so each command is reachable both as `>name` and as a slash command. Two subcommand groups (`sm`, `ld`, plus `roulette` in Fun) are `hybrid_group`s whose parent callback just replies with the group name.
+**Command surface.** Prefix is `>` (or a bot mention) and nearly everything is a
+`commands.hybrid_command`, reachable both as `>name` and as a slash command. The
+`roulette`, `sm`, and `ld` groups are `hybrid_group(invoke_without_command=True)` —
+without that flag the parent callback fires *in addition to* the subcommand on prefix
+invocations. Owner commands (`sync`, `reload`) are prefix-only by design.
 
-`ban` and `sm set` take arguments through `commands.FlagConverter` subclasses defined inline in the cog class (`banFlags`, `smFlags`) rather than plain parameters, which is what makes the slash-command variants show named options. Prefix invocation therefore needs `key: value` syntax (`>ban member: @user reason: spam`).
+**Error handling is global.** `bot.py` has one `on_command_error` plus a `tree.on_error`,
+both routed through `friendly_error()`, which pattern-matches the discord.py error
+hierarchy and returns a user-facing string (or `None` for "unexpected", which gets
+logged with a traceback). Ordering inside that `match` matters: subclasses must come
+before their bases (`MemberNotFound` before `BadArgument`, `MissingPermissions` before
+`CheckFailure`). New commands should not add their own `@cmd.error` handler — the global
+handler skips any command or cog that defines one.
 
-Error handling is per-command: each command has a sibling `@<command>.error` handler that pattern-matches on `commands.MissingRequiredArgument`, `CommandInvokeError`, `MemberNotFound`, `MissingRole`, etc. and replies with a user-facing string. There is no global error handler — new commands need their own.
+**Adding a command** means dropping a `.py` file in `cogs/` with a `commands.Cog`
+subclass and an `async def setup(bot)`. No registration list to update.
 
-## Hardcoded guild IDs
+## Conventions
 
-Every ID is a literal in the source; there is no config layer. If the bot is moved to another guild, all of these must change:
-
-| ID | Meaning | Used in |
-| --- | --- | --- |
-| `1041203946817081365` | "no images" restriction role | `modCommands.py` (`takeimg`/`giveimg`), `listeners.py` (`on_member_join`) |
-| `1042085580034539580` | Moderator role gating `takeimg`, `giveimg`, `modroulette`, `sm` | `modCommands.py` |
-| `1036799478608429116` | Role whose `send_messages` is toggled by `ld enable`/`ld disable` | `modCommands.py` |
-| `307688449811415041` | Owner ("flyx") who receives DM alerts on edited/deleted messages that mention them | `listeners.py` |
-| `787885272594513950`, `514143503471738910` | Join blacklist — these users get the restriction role on join | `listeners.py` |
-
-Note the inverted naming: `1041203946817081365` is a *restriction* role, so `takeimg` **adds** it and `giveimg` **removes** it.
-
-## Permission gating
-
-Mixed and inconsistent by design of whoever wrote it — `kick`/`ban`/`unban` use `@commands.has_permissions(...)`, `ld` uses `has_permissions(administrator=True)`, and the image/roulette/slowmode commands use `@commands.has_role(1042085580034539580)`. Several error handlers catch `MissingRole` on commands that actually raise `MissingPermissions`, so those branches are dead. Match the surrounding style when extending a cog, but be aware the handler may not fire.
+- `from __future__ import annotations` at the top of every module; `Flyxbot` is imported
+  under `TYPE_CHECKING` in cogs to avoid a circular import.
+- Gate destructive commands with both `@commands.has_permissions(...)` (or
+  `MODERATOR_ONLY`) and `@commands.bot_has_permissions(...)`, plus `@commands.guild_only()`
+  wherever `ctx.guild` is dereferenced.
+- Pass `reason=` on every audit-logged action (kick, ban, role change, channel edit).
+- Use `app_commands.describe(...)` so slash options get help text.
+- Nothing blocking in a coroutine — no `time.sleep`, no sync HTTP. Ruff's `ASYNC` rules
+  are enabled to catch this.
