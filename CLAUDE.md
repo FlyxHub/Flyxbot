@@ -82,3 +82,27 @@ subclass and an `async def setup(bot)`. No registration list to update.
 - Use `app_commands.describe(...)` so slash options get help text.
 - Nothing blocking in a coroutine — no `time.sleep`, no sync HTTP. Ruff's `ASYNC` rules
   are enabled to catch this.
+
+## Git
+
+Work happens on `Dev`; `main` is what PRs target.
+
+**Commit continuously, not in one batch at the end.** Every completed unit of work is a
+commit, and the tree should import and pass `ruff check` at each one. Batching a whole
+session into a single commit loses the reasoning, and anything built and then reworked
+later in the same session never reaches the log at all.
+
+- Run `ruff check .` and `ruff format --check .` before staging. A commit that fails
+  lint is one someone else has to bisect through later.
+- Keep a commit to one logical change. Reach for a second commit rather than a subject
+  line with "and" in it.
+- Stage deliberately: read `git status` and `git diff --stat` first. Drop line-ending
+  churn — a file that shows as modified but has an empty `git diff` is CRLF noise, not
+  a change, and `git checkout --` it.
+- Subject in the imperative mood ("Remove the lockdown commands", not "Removed"). Use
+  the body for *why*; the diff already covers *what*.
+- Prefer a new commit to amending or force-pushing one that has been pushed.
+- Never commit `.env` — it holds the token and is gitignored. `.env.example` is where a
+  new setting gets recorded.
+- Removing a command changes its slash-command registration too: note that the change
+  needs a manual `>sync` (see **Command tree is never auto-synced**).
