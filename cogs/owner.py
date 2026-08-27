@@ -28,13 +28,18 @@ class Owner(commands.Cog):
         self,
         ctx: commands.Context,
         guilds: commands.Greedy[discord.Object],
-        spec: Literal["~", "*", "^"] | None = None,
+        spec: Literal["~", "*", "^", "!"] | None = None,
     ) -> None:
         """Sync the app command tree.
 
         No arguments syncs globally (slow to propagate). `~` syncs to this guild,
         `*` copies the global commands to this guild and syncs, `^` clears this
-        guild's commands. Any guild IDs given are synced individually.
+        guild's commands, `!` clears the global commands. Any guild IDs given are
+        synced individually.
+
+        Duplicate slash commands in a guild usually mean commands got registered
+        both globally and to that guild (e.g. after a `*` sync). Clear both layers
+        and resync fresh: `>sync ^` then `>sync !` then `>sync`.
         """
         if not guilds:
             match spec:
@@ -47,10 +52,14 @@ class Owner(commands.Cog):
                     ctx.bot.tree.clear_commands(guild=ctx.guild)
                     await ctx.bot.tree.sync(guild=ctx.guild)
                     synced = []
+                case "!":
+                    ctx.bot.tree.clear_commands(guild=None)
+                    await ctx.bot.tree.sync()
+                    synced = []
                 case _:
                     synced = await ctx.bot.tree.sync()
 
-            where = "globally" if spec is None else "to the current guild"
+            where = "globally" if spec in (None, "!") else "to the current guild"
             await ctx.send(f"Synced {len(synced)} commands {where}.")
             return
 
