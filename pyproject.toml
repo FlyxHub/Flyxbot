@@ -12,8 +12,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["ruff>=0.6"]
 
-[tool.uv]
-package = false
+# Declared explicitly so `pip install -e .` has a defined backend rather than
+# falling back to setuptools' deprecated legacy path.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["bot", "config"]
+packages = ["cogs"]
 
 [tool.ruff]
 target-version = "py311"
