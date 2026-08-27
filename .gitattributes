@@ -1,0 +1,9 @@
+# Normalize to LF in the repo; let Git pick the working-copy ending.
+* text=auto
+
+# Shell scripts must keep LF even in a Windows working copy - a CR in the
+# shebang line makes Linux fail with "bad interpreter: /usr/bin/env bash^M".
+*.sh text eol=lf
+
+# PowerShell is happiest with CRLF on Windows.
+*.ps1 text eol=crlf

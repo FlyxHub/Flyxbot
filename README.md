@@ -14,14 +14,39 @@ In the portal, under **Bot → Privileged Gateway Intents**, enable:
 
 ## Setup
 
-```sh
-# with uv
-uv sync
-cp .env.example .env   # then fill in DISCORD_TOKEN
+The install scripts do everything: install Python if it's missing, create
+`.venv`, install the dependencies, and seed `.env`. Both are safe to re-run.
 
-# or with pip
-python -m venv .venv && .venv/Scripts/activate   # .venv/bin/activate on macOS/Linux
-pip install -e .
+**Ubuntu / Debian**
+
+```sh
+./scripts/install.sh
+```
+
+| Flag | Effect |
+| --- | --- |
+| `--systemd` | Also write `/etc/systemd/system/flyxbot.service` (installed, not started) |
+| `--service-user NAME` | Which user the service runs as (default: the invoking user) |
+| `--dry-run` | Print every command without running it |
+
+It uses whatever Python the release ships if it's 3.11+, otherwise installs one
+from apt, falling back to the deadsnakes PPA on older Ubuntu.
+
+**Windows**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+```
+
+`-Force` recreates the virtualenv; `-DryRun` changes nothing. Python is installed
+via winget, or downloaded from python.org if winget isn't available.
+
+**By hand**, if you'd rather:
+
+```sh
+python -m venv .venv
+.venv/bin/pip install -e .          # .venv\Scripts\pip on Windows
+cp .env.example .env                # then fill in DISCORD_TOKEN
 ```
 
 Put your token in `.env` (git-ignored) or export `DISCORD_TOKEN` in the environment.
@@ -29,7 +54,7 @@ Put your token in `.env` (git-ignored) or export `DISCORD_TOKEN` in the environm
 ## Running
 
 ```sh
-python bot.py
+.venv/bin/python bot.py             # .venv\Scripts\python.exe bot.py on Windows
 ```
 
 Slash commands are **not** synced automatically — a global sync on every startup
@@ -40,6 +65,19 @@ burns rate limits. Sync manually as the bot's owner once your commands change:
 >sync       # sync globally (can take up to an hour to propagate)
 >sync ^     # clear this guild's commands
 ```
+
+### As a service (Ubuntu)
+
+If you installed with `--systemd`, the unit is written but left stopped so you
+can fill in the token first:
+
+```sh
+sudo systemctl enable --now flyxbot   # start it, and on every boot
+journalctl -u flyxbot -f              # follow the logs
+sudo systemctl restart flyxbot        # after pulling changes
+```
+
+The unit reads `.env` via `EnvironmentFile`, so a token change needs a restart.
 
 ## Configuration
 

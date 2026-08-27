@@ -13,9 +13,14 @@ See `README.md` for setup, required privileged intents, and the env-var table.
 ## Running
 
 ```
-uv sync                # or: pip install -e .
-python bot.py
+./scripts/install.sh                        # Ubuntu; --systemd also writes a unit
+powershell -File scripts\install.ps1        # Windows
+.venv/bin/python bot.py
 ```
+
+Both installers are idempotent and support `--dry-run` / `-DryRun`, which prints
+every command instead of running it — use that when changing them. `install.sh`
+is pinned to LF by `.gitattributes`; a CRLF shebang breaks it on Linux.
 
 The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
 loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a
