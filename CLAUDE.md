@@ -18,6 +18,7 @@ See `README.md` for setup, required privileged intents, and the env-var table.
 powershell -File scripts\install.ps1        # Windows
 .venv/bin/python bot.py
 
+./scripts/install.sh --docker               # installs Docker instead of Python
 docker compose up -d --build                # or run it in a container
 ```
 
@@ -37,6 +38,17 @@ compose file is load-bearing: Python installs no `SIGTERM` handler and PID 1 ign
 signals with a default disposition, so without an init `docker compose stop` sits
 through the full grace period and then SIGKILLs the bot. The container runs
 `read_only`, which holds only as long as nothing in the bot writes to disk.
+
+`install.sh --docker` is a third mode alongside the default and `--systemd`, not an
+addition to them: it installs Docker Engine from Docker's own apt repository and
+skips Python, the virtualenv, and the unit file entirely. Distro detection lives in
+`docker_repo_target`, which maps a derivative to its upstream suite through
+`UBUNTU_CODENAME` - Mint's own `VERSION_CODENAME` (`vanessa`) is not a suite Docker
+publishes. Ubuntu's `docker.io` package is deliberately not used: it predates
+BuildKit-by-default, which the Dockerfile's cache mount needs, and it ships no
+Compose v2. Both installers must keep working under `--dry-run`, so anything that
+touches the system goes through `run`, and a bare command substitution outside it
+(`dpkg --print-architecture`) still executes - keep those side-effect free.
 
 The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
 loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a

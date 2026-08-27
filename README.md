@@ -113,6 +113,28 @@ You need [Docker Engine](https://docs.docker.com/engine/install/) 23 or later, o
 [Docker Desktop](https://docs.docker.com/desktop/). Both include Compose v2, which
 is the `docker compose` command used below.
 
+On Ubuntu or Debian, the installer can do that part for you:
+
+```sh
+git clone https://github.com/FlyxHub/Flyxbot.git
+cd Flyxbot
+./scripts/install.sh --docker
+```
+
+That adds Docker's apt repository, installs Docker Engine and Compose v2, puts you
+in the `docker` group, and creates `.env`. It installs no Python and creates no
+virtualenv - the image carries its own. Then set your token and skip to step 4
+below. Add `--start` to build and launch the container in the same run, once your
+token is in place.
+
+> [!CAUTION]
+> Membership in the `docker` group is equivalent to root: anyone in it can start a
+> container that mounts the whole host filesystem. That's the normal trade for not
+> typing `sudo` in front of every command, but it is a real one. Log out and back
+> in afterwards, or the group won't apply to your current shell.
+
+Otherwise, install Docker yourself and continue here:
+
 1. Clone the repository and enter it:
 
    ```sh
@@ -234,12 +256,19 @@ To preview the installation without changing anything, run
 | --- | --- |
 | `--systemd` | Also creates a `systemd` service so the bot starts at boot. The installer writes the service but doesn't start it, so you can add your token first. |
 | `--service-user NAME` | Sets the user the service runs as. Defaults to the user running the installer. |
+| `--docker` | Installs Docker Engine and Compose v2 instead of Python and a virtualenv. See [Run with Docker](#run-with-docker). |
+| `--start` | With `--docker`, builds the image and starts the container. Refuses to start while `DISCORD_TOKEN` is still empty. |
 | `--dry-run` | Prints each command instead of running it. Changes nothing. |
 | `--help` | Prints usage and exits. |
 
+`--docker` and `--systemd` are alternatives, and the installer says so rather than
+doing half of each: with Docker, Compose's `restart: unless-stopped` is what brings
+the bot back after a reboot, so there's no unit to write.
+
 > [!NOTE]
 > The installer is safe to run again. It reuses an existing `.venv` if the
-> version is new enough, and it never overwrites an existing `.env`.
+> version is new enough, it never overwrites an existing `.env`, and `--docker`
+> leaves Docker alone if a working Compose v2 is already installed.
 
 ### If your distribution ships an old Python
 
