@@ -43,8 +43,12 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
+        raw_token = os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN")
         return cls(
-            token=os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN"),
+            # A .env created with CRLF line endings (e.g. on Windows, then run
+            # through Docker's env_file on Linux) leaves a trailing \r on the
+            # value that discord.py rejects as "Improper token has been passed".
+            token=raw_token.strip() if raw_token else raw_token,
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
             owner_user_id=_snowflake("OWNER_USER_ID", 307688449811415041),
         )

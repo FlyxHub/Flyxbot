@@ -569,6 +569,7 @@ Run `>sync ~` afterwards if the update added or renamed a command.
 | `env file /path/.env not found` from Compose | You never created `.env`. | Run `cp .env.example .env` and set the token. |
 | Code changes don't take effect in Docker | The container still runs the image built from the old code. | Run `docker compose up -d --build`. A plain `restart` only rereads `.env`. |
 | `unknown flag: --mount` while building | Docker is old enough to be using the pre-BuildKit builder. | Upgrade to Docker Engine 23 or later, or build with `DOCKER_BUILDKIT=1 docker compose build`. |
+| `Improper token has been passed` in Docker | `.env` has Windows (CRLF) line endings, leaving a trailing `\r` on the token value. | Recreate `.env` with LF endings (e.g. `dos2unix .env`), or edit it directly on the Linux host. |
 
 To see what the bot is doing, read its log output. In a terminal it prints to the
 screen. As a service, read it with `journalctl -u flyxbot -f`. In Docker, read it
