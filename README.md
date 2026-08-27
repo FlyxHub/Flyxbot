@@ -507,7 +507,13 @@ The **Who can run it** column lists the Discord permission a member needs.
 | `sm set <seconds>` | Sets slowmode in the current channel, up to 21600 seconds. | Manage Channels |
 | `sm off` | Turns off slowmode in the current channel. | Manage Channels |
 
-### Owner
+### Server owner
+
+| Command | Description |
+| --- | --- |
+| `status [presence] [activity_type] [text]` | Sets the bot's online status and activity, e.g. `status idle watching the door`. Omit `text` to clear the activity. |
+
+### Bot owner
 
 These are text commands only. They have no slash equivalent.
 
@@ -601,6 +607,7 @@ Removing the bot from a server without deleting it: in Discord, open
 | `config.py` | Settings, read from the environment. |
 | `cogs/fun.py` | Commands available to everyone. |
 | `cogs/moderation.py` | Moderator commands. |
+| `cogs/admin.py` | `status`, gated on the server owner. |
 | `cogs/listeners.py` | The owner's DM alerts. |
 | `cogs/owner.py` | `sync` and `reload`. |
 | `scripts/` | The installers. |
