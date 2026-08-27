@@ -1,9 +1,13 @@
 """Runtime configuration for Flyxbot.
 
-Every guild ID that used to be a magic number in the source lives here. Values
-are read from the environment (optionally through a ``.env`` file) and fall back
-to the IDs of the guild the bot was originally written for, so an existing
-deployment keeps working once ``DISCORD_TOKEN`` is set.
+Every guild ID that used to be a magic number in the source lives here. Values are
+read from the environment (optionally through a ``.env`` file).
+
+Prefer a per-guild default over a configured ID: anything read from here is a single
+snowflake shared by every guild the bot joins, so it can only ever be right in one of
+them. ``no_images_role_id`` is the one remaining example of the problem - it names a
+role in one specific server, so the join handler that uses it does nothing anywhere
+else.
 """
 
 from __future__ import annotations
@@ -47,12 +51,9 @@ class Settings:
 
     token: str | None
     command_prefix: str
-    #: Restriction role. Having it *removes* the ability to post images.
+    #: Restriction role applied to blacklisted users on join. Having it *removes* the
+    #: ability to post images, through channel overwrites set up in the server itself.
     no_images_role_id: int
-    #: Role that gates the image, roulette and slowmode commands.
-    moderator_role_id: int
-    #: Role whose ``send_messages`` is toggled by ``ld enable`` / ``ld disable``.
-    lockdown_role_id: int
     #: User who gets DM alerts when a message mentioning them is edited/deleted.
     owner_user_id: int
     #: Users who receive the restriction role as soon as they join.
@@ -64,10 +65,8 @@ class Settings:
             token=os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN"),
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
             no_images_role_id=_snowflake("NO_IMAGES_ROLE_ID", 1041203946817081365),
-            moderator_role_id=_snowflake("MODERATOR_ROLE_ID", 1042085580034539580),
-            lockdown_role_id=_snowflake("LOCKDOWN_ROLE_ID", 1036799478608429116),
             owner_user_id=_snowflake("OWNER_USER_ID", 307688449811415041),
-            join_blacklist=_snowflakes("JOIN_BLACKLIST", (787885272594513950, 514143503471738910)),
+            join_blacklist=_snowflakes("JOIN_BLACKLIST", ()),
         )
 
 

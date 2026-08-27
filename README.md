@@ -1,7 +1,7 @@
 # Flyxbot
 
 Flyxbot is a moderation and entertainment bot for a single Discord server. It
-provides kick, ban, slowmode, lockdown, and image-permission commands for
+provides kick, ban, and slowmode commands for
 moderators, a set of games and lookup commands for everyone, and direct-message
 alerts when someone edits or deletes a message that mentions you.
 
@@ -94,7 +94,7 @@ The `permissions=268520534` value grants exactly what Flyxbot's commands need:
 | Add Reactions | `quickpoll` |
 | Kick Members | `kick`, `modroulette`, `roulette kick` |
 | Ban Members | `ban`, `unban`, `modroulette`, `roulette ban` |
-| Manage Roles | `takeimg`, `giveimg`, `ld enable`, `ld disable` |
+| Manage Roles | Restricting blacklisted users on join (see `JOIN_BLACKLIST`) |
 | Manage Channels | `sm set`, `sm off` |
 
 > [!CAUTION]
@@ -225,14 +225,14 @@ Only `DISCORD_TOKEN` is required. Every other setting has a working default.
 | --- | --- | --- |
 | `DISCORD_TOKEN` | *(none)* | The bot token. Required. |
 | `COMMAND_PREFIX` | `>` | The prefix for text commands. Mentioning the bot always works as a prefix too. |
-| `NO_IMAGES_ROLE_ID` | `1041203946817081365` | A restriction role. Holding it *removes* the ability to post images. |
-| `MODERATOR_ROLE_ID` | `1042085580034539580` | The role allowed to run `takeimg`, `giveimg`, `modroulette`, and `sm`. |
-| `LOCKDOWN_ROLE_ID` | `1036799478608429116` | The role whose permission to send messages `ld` turns on and off. |
+| `NO_IMAGES_ROLE_ID` | `1041203946817081365` | The role given to blacklisted users when they join. Only used when `JOIN_BLACKLIST` is non-empty. |
 | `OWNER_USER_ID` | `307688449811415041` | The user who receives DM alerts about edited and deleted messages that mention them. |
-| `JOIN_BLACKLIST` | Two user IDs | Users who receive the restriction role as soon as they join. Separate multiple IDs with commas or spaces. |
+| `JOIN_BLACKLIST` | *(empty)* | Users who receive the restriction role as soon as they join. Empty by default, so nobody is restricted on join. Separate multiple IDs with commas or spaces. |
 
-The defaults match the server Flyxbot was originally written for. If you move the
-bot to a different server, update every ID.
+Every command works in any server as soon as the bot is invited - they all gate on
+Discord permissions and read their targets from the invocation. The only settings
+that name a specific server are `NO_IMAGES_ROLE_ID` and `JOIN_BLACKLIST`, and they
+matter only if you use the join blacklist.
 
 > [!TIP]
 > To find an ID, turn on **User Settings > Advanced > Developer Mode** in Discord.
@@ -377,22 +377,16 @@ Run each of these as `>command` or `/command`.
 
 ### Moderators
 
-The **Who can run it** column lists the Discord permission or role a member needs.
+The **Who can run it** column lists the Discord permission a member needs.
 
 | Command | Description | Who can run it |
 | --- | --- | --- |
 | `kick <member> [reason]` | Kicks a member. | Kick Members |
 | `ban <member> [reason]` | Bans a member. | Ban Members |
 | `unban <user> [reason]` | Unbans a user. Accepts a user ID. | Ban Members |
-| `takeimg <member>` | Removes a member's permission to post images. | Moderator role |
-| `giveimg <member>` | Restores a member's permission to post images. | Moderator role |
-| `modroulette <member> [kick\|ban]` | One-in-six chance of kicking or banning the member. | Moderator role |
-| `sm set <seconds>` | Sets slowmode in the current channel, up to 21600 seconds. | Moderator role |
-| `sm off` | Turns off slowmode in the current channel. | Moderator role |
-| `ld enable` | Locks the current channel. | Administrator |
-| `ld disable` | Unlocks the current channel. | Administrator |
-
-"Moderator role" means the role set by `MODERATOR_ROLE_ID`.
+| `modroulette <member> [kick\|ban]` | One-in-six chance of kicking or banning the member. | Kick Members, plus Ban Members to pick `ban` |
+| `sm set <seconds>` | Sets slowmode in the current channel, up to 21600 seconds. | Manage Channels |
+| `sm off` | Turns off slowmode in the current channel. | Manage Channels |
 
 ### Owner
 
@@ -435,7 +429,7 @@ Run `>sync ~` afterwards if the update added or renamed a command.
 | Slash commands don't appear in Discord | They were never registered. | Run `>sync ~`. See [Register the slash commands](#register-the-slash-commands). |
 | `>` commands do nothing, but slash commands work | The Message Content intent is off. | Turn it on in the Developer Portal, then restart the bot. |
 | The bot replies "I don't have permission to do that" | The bot's role sits below the target member's role. | Move the bot's role higher in **Server Settings > Roles**. |
-| The bot replies "You don't have the role required" | Your account lacks the moderator role. | Check that `MODERATOR_ROLE_ID` in `.env` matches your server's role. |
+| The bot replies "You don't have permission to do that" | Your account is missing the Discord permission the command needs. | Check the **Who can run it** column in [Commands](#commands), then grant that permission to one of your roles. |
 | `bad interpreter: /usr/bin/env bash^M` | The script has Windows line endings, usually from copying files instead of cloning. | Clone the repository with Git instead of copying it, or run `sed -i 's/\r$//' scripts/install.sh`. |
 | `running scripts is disabled on this system` | PowerShell's execution policy blocks the installer. | Start it with `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`. |
 | `error: externally-managed-environment` | You ran `pip` outside the virtual environment. | Use `.venv/bin/pip`, or rerun `./scripts/install.sh`. |

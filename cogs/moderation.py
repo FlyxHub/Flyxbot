@@ -1,8 +1,8 @@
 """Moderation commands.
 
-Permission gating is deliberately mixed: the Discord-native actions (kick, ban,
-unban, lockdown) check Discord permissions, while the guild-specific ones check
-for the moderator role from :mod:`config`.
+Everything here gates on Discord's own permissions rather than on a configured role
+ID, and resolves its targets from ``ctx``, so the whole cog works in a server it has
+never seen before with no setup beyond inviting the bot.
 """
 
 from __future__ import annotations
@@ -14,24 +14,16 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from config import settings
-
 if TYPE_CHECKING:
     from bot import Flyxbot
 
 #: Discord's own ceiling for per-channel slowmode.
 MAX_SLOWMODE_SECONDS = 21600
 
-MODERATOR_ONLY = commands.has_role(settings.moderator_role_id)
-
 
 class Moderation(commands.Cog):
     def __init__(self, bot: Flyxbot) -> None:
         self.bot = bot
-
-    def restriction_role(self, guild: discord.Guild) -> discord.Role | None:
-        """The 'no images' role. Holding it *removes* the ability to post images."""
-        return guild.get_role(settings.no_images_role_id)
 
     @commands.hybrid_command()
     @commands.guild_only()
@@ -89,43 +81,8 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command()
     @commands.guild_only()
-    @MODERATOR_ONLY
-    @commands.bot_has_permissions(manage_roles=True)
-    @app_commands.describe(member="Who loses image perms.")
-    async def takeimg(self, ctx: commands.Context, member: discord.Member) -> None:
-        """Removes image perms from a user"""
-        role = self.restriction_role(ctx.guild)
-        if role is None:
-            await ctx.send("The image restriction role is missing. Check NO_IMAGES_ROLE_ID.")
-            return
-        if role in member.roles:
-            await ctx.send("That user does not have image perms to remove.")
-            return
-
-        await member.add_roles(role, reason=f"takeimg by {ctx.author}")
-        await ctx.send(f"Successfully removed image perms from {member.mention}.")
-
-    @commands.hybrid_command()
-    @commands.guild_only()
-    @MODERATOR_ONLY
-    @commands.bot_has_permissions(manage_roles=True)
-    @app_commands.describe(member="Who gets image perms back.")
-    async def giveimg(self, ctx: commands.Context, member: discord.Member) -> None:
-        """Grants image perms to a user"""
-        role = self.restriction_role(ctx.guild)
-        if role is None:
-            await ctx.send("The image restriction role is missing. Check NO_IMAGES_ROLE_ID.")
-            return
-        if role not in member.roles:
-            await ctx.send("That user already has image perms.")
-            return
-
-        await member.remove_roles(role, reason=f"giveimg by {ctx.author}")
-        await ctx.send(f"Successfully granted image perms to {member.mention}.")
-
-    @commands.hybrid_command()
-    @commands.guild_only()
-    @MODERATOR_ONLY
+    @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     @app_commands.describe(member="Who to gamble with.", action="What happens if they lose.")
     async def modroulette(
         self,
@@ -134,6 +91,14 @@ class Moderation(commands.Cog):
         action: Literal["kick", "ban"] = "kick",
     ) -> None:
         """1 in 6 chance of getting a user kicked/banned"""
+        # Kick permission gets you in the door; banning is a separate, bigger stick, so
+        # it needs its own permission rather than being reachable through an argument.
+        if action == "ban":
+            for label, actor in (("You", ctx.author), ("I", ctx.me)):
+                if not actor.guild_permissions.ban_members:
+                    await ctx.send(f"{label} need the Ban Members permission to play ban roulette.")
+                    return
+
         if random.randint(1, 6) != 6:
             await ctx.send(f"*click* - {member.mention} lives to see another day.")
             return
@@ -152,7 +117,7 @@ class Moderation(commands.Cog):
 
     @sm.command(description="Set the slowmode in the current channel.")
     @commands.guild_only()
-    @MODERATOR_ONLY
+    @commands.has_permissions(manage_channels=True)
     @commands.bot_has_permissions(manage_channels=True)
     @app_commands.describe(seconds="Slowmode interval in seconds.")
     async def set(
@@ -163,46 +128,11 @@ class Moderation(commands.Cog):
 
     @sm.command(description="Disable slowmode in the current channel.")
     @commands.guild_only()
-    @MODERATOR_ONLY
+    @commands.has_permissions(manage_channels=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def off(self, ctx: commands.Context) -> None:
         await ctx.channel.edit(slowmode_delay=0, reason=f"Slowmode off by {ctx.author}")
         await ctx.send("Channel slowmode disabled.")
-
-    @commands.hybrid_group(invoke_without_command=True)
-    @commands.guild_only()
-    async def ld(self, ctx: commands.Context) -> None:
-        """Channel lockdown"""
-        await ctx.send("Lockdown. Try `ld enable` or `ld disable`.")
-
-    async def _set_lockdown(self, ctx: commands.Context, *, locked: bool) -> None:
-        role = ctx.guild.get_role(settings.lockdown_role_id)
-        if role is None:
-            await ctx.send("The lockdown role is missing. Check LOCKDOWN_ROLE_ID.")
-            return
-
-        state = "enabled" if locked else "lifted"
-        await ctx.channel.set_permissions(
-            role,
-            view_channel=True,
-            send_messages=not locked,
-            reason=f"Lockdown {state} by {ctx.author}",
-        )
-        await ctx.send("Channel is now locked down." if locked else "Channel lockdown lifted.")
-
-    @ld.command(description="Locks down a channel.")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    async def enable(self, ctx: commands.Context) -> None:
-        await self._set_lockdown(ctx, locked=True)
-
-    @ld.command(description="Unlocks a channel from lockdown.")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    async def disable(self, ctx: commands.Context) -> None:
-        await self._set_lockdown(ctx, locked=False)
 
 
 async def setup(bot: Flyxbot) -> None:
