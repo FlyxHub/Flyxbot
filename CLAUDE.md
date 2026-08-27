@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Flyxbot is a single-guild Discord bot on `discord.py` 2.7 (Python 3.11+). The whole
 project is `bot.py`, `config.py`, and four cogs. There is no test suite; `ruff` is the
-only tooling (configured in `pyproject.toml`).
+only tooling (configured in `pyproject.toml`). It runs from a virtualenv on the host
+or in a container; both paths are documented in `README.md`.
 
 See `README.md` for setup, required privileged intents, and the env-var table.
 
@@ -16,11 +17,26 @@ See `README.md` for setup, required privileged intents, and the env-var table.
 ./scripts/install.sh                        # Ubuntu; --systemd also writes a unit
 powershell -File scripts\install.ps1        # Windows
 .venv/bin/python bot.py
+
+docker compose up -d --build                # or run it in a container
 ```
 
 Both installers are idempotent and support `--dry-run` / `-DryRun`, which prints
 every command instead of running it — use that when changing them. `install.sh`
-is pinned to LF by `.gitattributes`; a CRLF shebang breaks it on Linux.
+is pinned to LF by `.gitattributes`; a CRLF shebang breaks it on Linux, and the
+same rule now covers `Dockerfile` and `docker-compose.yml`.
+
+**Docker.** The `Dockerfile` is two stages: the first builds `/opt/venv`, the second
+copies it next to the source at `/app` and runs as the unprivileged `flyxbot` user.
+Dependencies are read out of `pyproject.toml` with `tomllib` at build time rather
+than duplicated into a `requirements.txt` — keep it that way, and note that only
+`pyproject.toml` is copied before the install step, so a cog edit doesn't invalidate
+that layer. `.env` is in `.dockerignore` and reaches the container through
+`env_file:` at run time, so the token never lands in a layer. `init: true` in the
+compose file is load-bearing: Python installs no `SIGTERM` handler and PID 1 ignores
+signals with a default disposition, so without an init `docker compose stop` sits
+through the full grace period and then SIGKILLs the bot. The container runs
+`read_only`, which holds only as long as nothing in the bot writes to disk.
 
 The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
 loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a

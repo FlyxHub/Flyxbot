@@ -16,6 +16,7 @@ on Python 3.11 or later.
 - [Before you begin](#before-you-begin)
 - [Create the Discord application](#create-the-discord-application)
 - [Invite the bot to your server](#invite-the-bot-to-your-server)
+- [Run with Docker](#run-with-docker)
 - [Install on Linux](#install-on-linux)
 - [Install on Windows](#install-on-windows)
 - [Configure the bot](#configure-the-bot)
@@ -34,12 +35,12 @@ You need the following:
 | Requirement | Notes |
 | --- | --- |
 | A Discord account with **Manage Server** permission | You need it on the server that hosts the bot. |
-| Ubuntu 22.04 or later, or Windows 10 or later | Other Linux distributions work if they use `apt`. |
+| Ubuntu 22.04 or later, or Windows 10 or later | Other Linux distributions work if they use `apt`. Docker works on any host, including macOS. |
 | Git | Used to clone this repository. |
 | An internet connection | The installer downloads Python and the bot's dependencies. |
 
 You don't need to install Python yourself. The installers do it for you if a
-suitable version is missing.
+suitable version is missing, and the Docker image brings its own.
 
 If you're redeploying and already have a bot token, skip to
 [Install on Linux](#install-on-linux) or
@@ -101,6 +102,98 @@ The `permissions=85078` value grants exactly what Flyxbot's commands need:
 > ban a member whose highest role sits above its own, even with Administrator.
 > This is the most common cause of "I don't have permission to do that" after a
 > working install.
+
+## Run with Docker
+
+Docker is the shortest path. You don't need the installers, and you don't need
+Python on the host - the image brings its own. Skip to
+[Install on Linux](#install-on-linux) if you'd rather run the bot directly.
+
+You need [Docker Engine](https://docs.docker.com/engine/install/) 23 or later, or
+[Docker Desktop](https://docs.docker.com/desktop/). Both include Compose v2, which
+is the `docker compose` command used below.
+
+1. Clone the repository and enter it:
+
+   ```sh
+   git clone https://github.com/FlyxHub/Flyxbot.git
+   cd Flyxbot
+   ```
+
+1. Create the `.env` file from the example:
+
+   ```sh
+   cp .env.example .env      # Linux and macOS
+   copy .env.example .env    # Windows
+   ```
+
+1. Open `.env`, set `DISCORD_TOKEN` to the token you copied earlier, and save it.
+   See [Settings](#settings) for what else you can put in there.
+
+1. Build the image and start the bot:
+
+   ```sh
+   docker compose up -d
+   ```
+
+   The first build takes a minute or two. After that, only a change to
+   `pyproject.toml` makes it reinstall dependencies.
+
+1. Confirm that it connected:
+
+   ```sh
+   docker compose logs -f
+   ```
+
+   Look for `Connected as YourBot#1234`. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to
+   stop following the log - the bot keeps running.
+
+Now go to [Register the slash commands](#register-the-slash-commands).
+
+### Manage the container
+
+Run these from the repository folder.
+
+| Task | Command |
+| --- | --- |
+| Follow the logs | `docker compose logs -f` |
+| Read the last 50 lines | `docker compose logs --tail 50` |
+| Restart after changing `.env` | `docker compose restart` |
+| Stop the bot | `docker compose stop` |
+| Start it again | `docker compose start` |
+| Rebuild after changing the code | `docker compose up -d --build` |
+| Stop and remove the container | `docker compose down` |
+
+`restart: unless-stopped` in `docker-compose.yml` means the bot comes back after
+a crash and starts again when the host reboots. It stays down after
+`docker compose stop` until you start it again.
+
+> [!IMPORTANT]
+> The container reads `.env` when it starts, so `docker compose restart` is what
+> applies a setting change. The file is never copied into the image, which is why
+> the token can't leak into a layer you push somewhere.
+
+> [!TIP]
+> To edit a cog without rebuilding, add a bind mount to the `flyxbot` service in
+> `docker-compose.yml`:
+>
+> ```yaml
+>     volumes:
+>       - ./cogs:/app/cogs:ro
+> ```
+>
+> Then `>reload cogs.fun` picks up a change to that cog without restarting
+> anything. Take the mount back out before you deploy.
+
+### What the image does
+
+| Choice | Reason |
+| --- | --- |
+| `python:3.13-slim`, two stages | Only the finished virtualenv is copied forward, so pip and the build tools don't ship. |
+| Dependencies read from `pyproject.toml` | One dependency list in the repo instead of two that drift apart. |
+| Runs as the `flyxbot` user, read-only filesystem | The bot writes nothing to disk. |
+| `init: true` | Python installs no `SIGTERM` handler, and PID 1 ignores signals with a default disposition. Without an init to forward it, every `docker compose stop` would wait out the 10-second grace period and then kill the bot. |
+| Log rotation at 10 MB x 3 | A bot that runs for months otherwise fills the disk with JSON logs. |
 
 ## Install on Linux
 
@@ -198,7 +291,8 @@ If `winget` isn't available, the installer downloads the Python installer from
 ## Configure the bot
 
 The bot reads its settings from a `.env` file in the repository root. The
-installer creates this file for you.
+installer creates this file for you; with Docker you copy `.env.example` to
+`.env` yourself.
 
 1. Open `.env` in a text editor:
 
@@ -412,6 +506,14 @@ git pull
 .venv\Scripts\python.exe -m pip install --upgrade -e .
 ```
 
+With Docker:
+
+```sh
+cd Flyxbot
+git pull
+docker compose up -d --build
+```
+
 Run `>sync ~` afterwards if the update added or renamed a command.
 
 ## Troubleshoot
@@ -429,9 +531,13 @@ Run `>sync ~` afterwards if the update added or renamed a command.
 | `bad interpreter: /usr/bin/env bash^M` | The script has Windows line endings, usually from copying files instead of cloning. | Clone the repository with Git instead of copying it, or run `sed -i 's/\r$//' scripts/install.sh`. |
 | `running scripts is disabled on this system` | PowerShell's execution policy blocks the installer. | Start it with `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`. |
 | `error: externally-managed-environment` | You ran `pip` outside the virtual environment. | Use `.venv/bin/pip`, or rerun `./scripts/install.sh`. |
+| `env file /path/.env not found` from Compose | You never created `.env`. | Run `cp .env.example .env` and set the token. |
+| Code changes don't take effect in Docker | The container still runs the image built from the old code. | Run `docker compose up -d --build`. A plain `restart` only rereads `.env`. |
+| `unknown flag: --mount` while building | Docker is old enough to be using the pre-BuildKit builder. | Upgrade to Docker Engine 23 or later, or build with `DOCKER_BUILDKIT=1 docker compose build`. |
 
 To see what the bot is doing, read its log output. In a terminal it prints to the
-screen. As a service, read it with `journalctl -u flyxbot -f`.
+screen. As a service, read it with `journalctl -u flyxbot -f`. In Docker, read it
+with `docker compose logs -f`.
 
 ## Uninstall
 
@@ -441,6 +547,12 @@ screen. As a service, read it with `journalctl -u flyxbot -f`.
    sudo systemctl disable --now flyxbot
    sudo rm /etc/systemd/system/flyxbot.service
    sudo systemctl daemon-reload
+   ```
+
+1. Or, if you ran it in Docker, remove the container and its image:
+
+   ```sh
+   docker compose down --rmi local
    ```
 
 1. Delete the repository folder.
@@ -463,6 +575,8 @@ Removing the bot from a server without deleting it: in Discord, open
 | `cogs/listeners.py` | The owner's DM alerts. |
 | `cogs/owner.py` | `sync` and `reload`. |
 | `scripts/` | The installers. |
+| `Dockerfile` | The two-stage build for the container image. |
+| `docker-compose.yml` | How that image is run: `.env`, restart policy, log rotation. |
 
 ### Add a command
 

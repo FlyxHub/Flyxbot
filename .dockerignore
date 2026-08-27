@@ -1,0 +1,23 @@
+# .env is the one that matters: the token has to come from the environment at
+# run time, never from a layer that could be pushed to a registry.
+.env
+
+# Nothing below is needed to run the bot.
+.git/
+.gitattributes
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+scripts/
+CLAUDE.md
+LICENSE
+README.md
+
+# Build and tooling leftovers from a local checkout.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/

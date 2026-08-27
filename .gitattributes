@@ -7,3 +7,9 @@
 
 # PowerShell is happiest with CRLF on Windows.
 *.ps1 text eol=crlf
+
+# Docker builds run on Linux. A CR left on the end of a RUN line becomes part of
+# the command the shell inside the build runs.
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+docker-compose.yml text eol=lf
