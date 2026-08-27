@@ -77,7 +77,7 @@ def friendly_error(error: BaseException) -> str | None:
 class Flyxbot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
-        intents.members = True  # on_member_join, member lookups
+        intents.members = True  # member lookups and converters
         intents.message_content = True  # prefix commands + edit/delete logging
         super().__init__(
             command_prefix=commands.when_mentioned_or(settings.command_prefix),

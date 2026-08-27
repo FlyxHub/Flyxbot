@@ -56,8 +56,7 @@ Do this once per bot. If you already have a token, go to
    **Create**.
 1. In the left sidebar, select **Bot**.
 1. Under **Privileged Gateway Intents**, turn on both of the following:
-   - **Server Members Intent**. The bot uses it to detect members joining and to
-     look members up.
+   - **Server Members Intent**. The bot uses it to look members up.
    - **Message Content Intent**. The bot uses it to read `>` commands and to
      report edited or deleted messages.
 1. Select **Save Changes**.
@@ -79,13 +78,13 @@ Paste the token somewhere safe for now. You need it during installation.
    from the portal's **General Information** page:
 
    ```text
-   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=268520534&scope=bot+applications.commands
+   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=85078&scope=bot+applications.commands
    ```
 
 1. Open the URL in a browser.
 1. Select your server, and then select **Authorize**.
 
-The `permissions=268520534` value grants exactly what Flyxbot's commands need:
+The `permissions=85078` value grants exactly what Flyxbot's commands need:
 
 | Permission | Required by |
 | --- | --- |
@@ -94,15 +93,14 @@ The `permissions=268520534` value grants exactly what Flyxbot's commands need:
 | Add Reactions | `quickpoll` |
 | Kick Members | `kick`, `modroulette`, `roulette kick` |
 | Ban Members | `ban`, `unban`, `modroulette`, `roulette ban` |
-| Manage Roles | Restricting blacklisted users on join (see `JOIN_BLACKLIST`) |
 | Manage Channels | `sm set`, `sm off` |
 
 > [!CAUTION]
 > Discord permissions aren't enough on their own. In **Server Settings > Roles**,
-> drag the bot's role *above* every role it needs to act on. A bot can't kick,
-> ban, or change the roles of a member whose highest role sits above its own,
-> even with Administrator. This is the most common cause of "I don't have
-> permission to do that" after a working install.
+> drag the bot's role *above* every role it needs to act on. A bot can't kick or
+> ban a member whose highest role sits above its own, even with Administrator.
+> This is the most common cause of "I don't have permission to do that" after a
+> working install.
 
 ## Install on Linux
 
@@ -225,18 +223,16 @@ Only `DISCORD_TOKEN` is required. Every other setting has a working default.
 | --- | --- | --- |
 | `DISCORD_TOKEN` | *(none)* | The bot token. Required. |
 | `COMMAND_PREFIX` | `>` | The prefix for text commands. Mentioning the bot always works as a prefix too. |
-| `NO_IMAGES_ROLE_ID` | `1041203946817081365` | The role given to blacklisted users when they join. Only used when `JOIN_BLACKLIST` is non-empty. |
 | `OWNER_USER_ID` | `307688449811415041` | The user who receives DM alerts about edited and deleted messages that mention them. |
-| `JOIN_BLACKLIST` | *(empty)* | Users who receive the restriction role as soon as they join. Empty by default, so nobody is restricted on join. Separate multiple IDs with commas or spaces. |
 
 Every command works in any server as soon as the bot is invited - they all gate on
-Discord permissions and read their targets from the invocation. The only settings
-that name a specific server are `NO_IMAGES_ROLE_ID` and `JOIN_BLACKLIST`, and they
-matter only if you use the join blacklist.
+Discord permissions and read their targets from the invocation. `OWNER_USER_ID` is
+the only ID left, and it names a user rather than anything in your server, so set it
+to your own account if you want the DM alerts.
 
 > [!TIP]
 > To find an ID, turn on **User Settings > Advanced > Developer Mode** in Discord.
-> You can then right-click any role, user, or channel and select **Copy ID**.
+> You can then right-click any user and select **Copy ID**.
 
 ## Start the bot
 
@@ -464,7 +460,7 @@ Removing the bot from a server without deleting it: in Discord, open
 | `config.py` | Settings, read from the environment. |
 | `cogs/fun.py` | Commands available to everyone. |
 | `cogs/moderation.py` | Moderator commands. |
-| `cogs/listeners.py` | Join handling and the owner's DM alerts. |
+| `cogs/listeners.py` | The owner's DM alerts. |
 | `cogs/owner.py` | `sync` and `reload`. |
 | `scripts/` | The installers. |
 

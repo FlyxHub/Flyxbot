@@ -1,4 +1,4 @@
-"""Passive gateway listeners: join handling and mention alerts for the owner."""
+"""Passive gateway listeners: DM alerts when a message mentioning the owner changes."""
 
 from __future__ import annotations
 
@@ -49,23 +49,6 @@ class Listeners(commands.Cog):
             await owner.send(embed=embed)
         except discord.Forbidden:
             log.warning("Owner %s has DMs closed", owner)
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member) -> None:
-        if member.id not in settings.join_blacklist:
-            return
-
-        role = member.guild.get_role(settings.no_images_role_id)
-        if role is None:
-            log.warning(
-                "Restriction role %s not found in %s", settings.no_images_role_id, member.guild
-            )
-            return
-
-        try:
-            await member.add_roles(role, reason="On the join blacklist.")
-        except discord.HTTPException:
-            log.exception("Could not restrict %s on join", member)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message) -> None:

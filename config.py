@@ -5,9 +5,8 @@ read from the environment (optionally through a ``.env`` file).
 
 Prefer a per-guild default over a configured ID: anything read from here is a single
 snowflake shared by every guild the bot joins, so it can only ever be right in one of
-them. ``no_images_role_id`` is the one remaining example of the problem - it names a
-role in one specific server, so the join handler that uses it does nothing anywhere
-else.
+them. Resolve from the guild or the invocation wherever Discord already gives an
+answer, and gate commands on Discord's own permissions rather than on a role ID.
 """
 
 from __future__ import annotations
@@ -33,40 +32,21 @@ def _snowflake(name: str, default: int) -> int:
         raise RuntimeError(f"{name} must be a Discord ID (integer), got {raw!r}") from exc
 
 
-def _snowflakes(name: str, default: tuple[int, ...]) -> tuple[int, ...]:
-    raw = os.environ.get(name)
-    if not raw or not raw.strip():
-        return default
-    try:
-        return tuple(int(part) for part in raw.replace(",", " ").split())
-    except ValueError as exc:
-        raise RuntimeError(
-            f"{name} must be a space/comma separated list of IDs, got {raw!r}"
-        ) from exc
-
-
 @dataclass(frozen=True, slots=True)
 class Settings:
     """Immutable snapshot of the environment, built once at import time."""
 
     token: str | None
     command_prefix: str
-    #: Restriction role applied to blacklisted users on join. Having it *removes* the
-    #: ability to post images, through channel overwrites set up in the server itself.
-    no_images_role_id: int
     #: User who gets DM alerts when a message mentioning them is edited/deleted.
     owner_user_id: int
-    #: Users who receive the restriction role as soon as they join.
-    join_blacklist: tuple[int, ...]
 
     @classmethod
     def from_env(cls) -> Settings:
         return cls(
             token=os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN"),
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
-            no_images_role_id=_snowflake("NO_IMAGES_ROLE_ID", 1041203946817081365),
             owner_user_id=_snowflake("OWNER_USER_ID", 307688449811415041),
-            join_blacklist=_snowflakes("JOIN_BLACKLIST", ()),
         )
 
 

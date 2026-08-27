@@ -47,10 +47,9 @@ by every guild the bot is in, so it can only ever be correct in one of them. Res
 configured role ID: a `commands.has_role(id)` check is bound at import time and locks the
 command out of every other guild, including for its owner.
 
-`no_images_role_id` is the only configured snowflake left, and no command uses it: note the
-inverted naming — it is a *restriction* role, and the only thing that applies it is
-`on_member_join` in `cogs/listeners.py`, for users listed in `join_blacklist` (empty by
-default, so that handler is normally inert).
+`owner_user_id` is the only configured snowflake left, and it names a user rather than
+anything inside a guild, so the bot works in any server with no setup beyond the invite.
+Keep it that way: a new setting that names a role, channel, or guild is a regression.
 
 **Command surface.** Prefix is `>` (or a bot mention) and nearly everything is a
 `commands.hybrid_command`, reachable both as `>name` and as a slash command. The
