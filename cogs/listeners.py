@@ -28,6 +28,16 @@ def field_value(content: str) -> str:
     return content[: MAX_FIELD_LENGTH - 1] + "\N{HORIZONTAL ELLIPSIS}"
 
 
+def alert_embed(message: discord.Message, verb: str) -> discord.Embed:
+    """The parts of an owner alert that don't depend on what happened to the message."""
+    embed = discord.Embed(title=f"Message mentioning you {verb} in {message.guild.name}")
+    embed.set_thumbnail(url=message.author.display_avatar.url)
+    embed.add_field(name="Sent by:", value=str(message.author), inline=True)
+    embed.add_field(name="In channel:", value=message.channel.mention, inline=True)
+    embed.set_footer(text=f"Sender ID: {message.author.id}")
+    return embed
+
+
 class Listeners(commands.Cog):
     def __init__(self, bot: Flyxbot) -> None:
         self.bot = bot
@@ -55,12 +65,8 @@ class Listeners(commands.Cog):
         if message.guild is None or message.author.bot or not self.mentions_owner(message):
             return
 
-        embed = discord.Embed(title=f"Message mentioning you deleted in {message.guild.name}")
-        embed.set_thumbnail(url=message.author.display_avatar.url)
-        embed.add_field(name="Sent by:", value=str(message.author), inline=True)
-        embed.add_field(name="In channel:", value=message.channel.mention, inline=True)
+        embed = alert_embed(message, "deleted")
         embed.add_field(name="Message content:", value=field_value(message.content), inline=False)
-        embed.set_footer(text=f"Sender ID: {message.author.id}")
         await self.alert_owner(embed)
 
     @commands.Cog.listener()
@@ -71,13 +77,9 @@ class Listeners(commands.Cog):
         if before.guild is None or before.author.bot or not self.mentions_owner(before):
             return
 
-        embed = discord.Embed(title=f"Message mentioning you edited in {before.guild.name}")
-        embed.set_thumbnail(url=before.author.display_avatar.url)
-        embed.add_field(name="Sent by:", value=str(before.author), inline=True)
-        embed.add_field(name="In channel:", value=before.channel.mention, inline=True)
+        embed = alert_embed(before, "edited")
         embed.add_field(name="Original message:", value=field_value(before.content), inline=False)
         embed.add_field(name="Edited message:", value=field_value(after.content), inline=False)
-        embed.set_footer(text=f"Sender ID: {before.author.id}")
         await self.alert_owner(embed)
 
 

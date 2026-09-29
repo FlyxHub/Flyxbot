@@ -7,12 +7,13 @@ never seen before with no setup beyond inviting the bot.
 
 from __future__ import annotations
 
-import random
 from typing import TYPE_CHECKING, Literal
 
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+from cogs.fun import play_roulette
 
 if TYPE_CHECKING:
     from bot import Flyxbot
@@ -99,15 +100,7 @@ class Moderation(commands.Cog):
                     await ctx.send(f"{label} need the Ban Members permission to play ban roulette.")
                     return
 
-        if random.randint(1, 6) != 6:
-            await ctx.send(f"*click* - {member.mention} lives to see another day.")
-            return
-
-        await ctx.send(f"{member.mention} lost {action} roulette and was {action}ned.")
-        if action == "kick":
-            await member.kick(reason="Lost kick roulette.")
-        else:
-            await member.ban(reason="Lost ban roulette.", delete_message_seconds=0)
+        await play_roulette(ctx, member, action)
 
     @commands.hybrid_group(invoke_without_command=True)
     @commands.guild_only()

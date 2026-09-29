@@ -51,7 +51,7 @@ touches the system goes through `run`, and a bare command substitution outside i
 (`dpkg --print-architecture`) still executes - keep those side-effect free.
 
 The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
-loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a
+loads `.env` automatically; `bot.py` exits with a
 readable message if no token is found.
 
 ## Architecture
@@ -62,7 +62,7 @@ readable message if no token is found.
 
 **Command tree is never auto-synced.** Syncing globally on each startup wastes rate
 limits, so `cogs/owner.py` owns a prefix-only `sync` command (owner-gated, the standard
-Umbra recipe). Any change to a command signature needs a manual `>sync ~`.
+Umbra recipe). Any change to a command signature needs a manual `>sync`.
 
 **Configuration.** All guild IDs live in `config.py` as a frozen `Settings` dataclass
 read from the environment. Never hardcode a snowflake in a cog — add a field to
@@ -89,9 +89,9 @@ invocations. Owner commands (`sync`, `reload`) are prefix-only by design.
 both routed through `friendly_error()`, which pattern-matches the discord.py error
 hierarchy and returns a user-facing string (or `None` for "unexpected", which gets
 logged with a traceback). Ordering inside that `match` matters: subclasses must come
-before their bases (`MemberNotFound` before `BadArgument`, `MissingPermissions` before
+before their bases (`MemberNotFound` before `UserInputError`, `MissingPermissions` before
 `CheckFailure`). New commands should not add their own `@cmd.error` handler — the global
-handler skips any command or cog that defines one.
+handler still runs too, so the user would get two replies.
 
 **Adding a command** means dropping a `.py` file in `cogs/` with a `commands.Cog`
 subclass and an `async def setup(bot)`. No registration list to update.

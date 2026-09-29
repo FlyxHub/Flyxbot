@@ -456,24 +456,28 @@ wastes Discord's rate limits.
 1. In any channel on your server, send:
 
    ```text
-   >sync ~
+   >sync
    ```
 
-The bot replies with the number of commands it registered. The slash commands
-appear in Discord immediately.
+The bot replies with the number of commands it registered, and the slash
+commands become available on every server the bot is in. If they don't show up
+right away, restart Discord to refresh its command list.
 
 > [!NOTE]
 > Only the bot's owner can run `>sync`. Discord treats the owner as the account
 > or team that owns the application in the Developer Portal.
 
-Run `>sync ~` again whenever you add a command or change a command's name or
+Run `>sync` again whenever you add a command or change a command's name or
 options. You don't need it after other code changes.
 
 | Command | Effect |
 | --- | --- |
-| `>sync ~` | Registers commands on the current server. Takes effect immediately. |
-| `>sync` | Registers commands on every server. Can take up to an hour to appear. |
-| `>sync ^` | Removes this server's commands. |
+| `>sync` | Registers commands on every server. |
+| `>sync *` | Copies the commands onto the current server only, for testing. Run `>sync ^` when you're done, or every command shows up twice. |
+| `>sync ^` | Removes the commands registered to the current server. |
+| `>sync !` | Removes the commands registered on every server. Run `>sync` to bring them back. |
+
+If every slash command shows up twice, run `>sync ^` and then `>sync`.
 
 ## Command reference
 
@@ -519,7 +523,7 @@ These are text commands only. They have no slash equivalent.
 
 | Command | Description |
 | --- | --- |
-| `>sync [~\|*\|^]` | Registers slash commands. See [Register the slash commands](#register-the-slash-commands). |
+| `>sync [*\|^\|!]` | Registers slash commands. See [Register the slash commands](#register-the-slash-commands). |
 | `>reload <extension>` | Reloads one cog without restarting, for example `>reload cogs.fun`. |
 
 ## Update to a new version
@@ -549,7 +553,7 @@ git pull
 docker compose up -d --build
 ```
 
-Run `>sync ~` afterwards if the update added or renamed a command.
+Run `>sync` afterwards if the update added or renamed a command.
 
 ## Troubleshoot
 
@@ -559,7 +563,7 @@ Run `>sync ~` afterwards if the update added or renamed a command.
 | `Discord rejected the token` | The token is wrong, or it was reset in the portal. | Reset the token in the Developer Portal and update `.env`. |
 | `This bot needs the Server Members and Message Content intents` | The privileged intents are off. | Turn both on, as described in [Create the Discord application](#create-the-discord-application). |
 | `ModuleNotFoundError: No module named 'discord'` | You started the bot with the system Python. | Use the interpreter in `.venv`. See [Start the bot](#start-the-bot). |
-| Slash commands don't appear in Discord | They were never registered. | Run `>sync ~`. See [Register the slash commands](#register-the-slash-commands). |
+| Slash commands don't appear in Discord | They were never registered. | Run `>sync`. See [Register the slash commands](#register-the-slash-commands). |
 | `>` commands do nothing, but slash commands work | The Message Content intent is off. | Turn it on in the Developer Portal, then restart the bot. |
 | The bot replies "I don't have permission to do that" | The bot's role sits below the target member's role. | Move the bot's role higher in **Server Settings > Roles**. |
 | The bot replies "You don't have permission to do that" | Your account is missing the Discord permission the command needs. | Check the **Who can run it** column in [Commands](#commands), then grant that permission to one of your roles. |
@@ -621,7 +625,7 @@ Removing the bot from a server without deleting it: in Discord, open
 1. Define a `commands.Cog` subclass that holds your commands.
 1. Add an `async def setup(bot)` function that calls `await bot.add_cog(...)`.
 1. Restart the bot, or run `>reload cogs.yourfile`.
-1. Run `>sync ~` to register the slash version.
+1. Run `>sync` to register the slash version.
 
 The bot loads every file in `cogs/` at startup, so there's no list to update.
 Your command doesn't need its own error handler; the global handler in `bot.py`

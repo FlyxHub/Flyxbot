@@ -19,7 +19,7 @@ log = logging.getLogger("flyxbot")
 COGS_DIR = Path(__file__).parent / "cogs"
 
 #: Errors that are noise rather than something the user needs to hear about.
-SILENT_ERRORS = (commands.CommandNotFound, commands.DisabledCommand)
+SILENT_ERRORS = commands.CommandNotFound
 
 
 def _from_api_error(exc: BaseException) -> str | None:
@@ -41,30 +41,15 @@ def friendly_error(error: BaseException) -> str | None:
             return friendly_error(getattr(error.original, "original", error.original))
         case commands.MissingRequiredArgument():
             return f"Missing required argument: `{error.param.name}`."
-        case commands.MissingRequiredFlag():
-            return f"Missing required argument: `{error.flag.name}`."
         case commands.MissingPermissions() | commands.BotMissingPermissions():
             missing = ", ".join(perm.replace("_", " ") for perm in error.missing_permissions)
             who = "I don't" if isinstance(error, commands.BotMissingPermissions) else "You don't"
             return f"{who} have permission to do that (missing: {missing})."
-        case commands.MissingRole() | commands.MissingAnyRole():
-            return "You don't have the role required for that command."
-        case commands.NotOwner():
-            return "That command is owner-only."
         case commands.NoPrivateMessage():
             return "That command only works inside a server."
         case commands.MemberNotFound() | commands.UserNotFound():
             return "I can't find that user. Are you sure you have the right person?"
-        case commands.RoleNotFound() | commands.ChannelNotFound() | commands.RangeError():
-            return str(error)
-        case commands.CommandOnCooldown():
-            return f"That command is on cooldown. Try again in {error.retry_after:.1f}s."
-        case (
-            commands.BadArgument()
-            | commands.BadUnionArgument()
-            | commands.BadLiteralArgument()
-            | commands.UserInputError()
-        ):
+        case commands.UserInputError():
             return str(error) or "I couldn't understand one of those arguments."
         case commands.CheckFailure():
             return "You can't use that command here."
@@ -106,10 +91,6 @@ class Flyxbot(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         """One handler for every command; individual commands don't need their own."""
         if isinstance(error, SILENT_ERRORS):
-            return
-        if ctx.command is not None and ctx.command.has_error_handler():
-            return
-        if ctx.cog is not None and ctx.cog.has_error_handler():
             return
 
         message = friendly_error(error)

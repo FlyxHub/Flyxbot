@@ -14,22 +14,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-try:
-    from dotenv import load_dotenv
-except ModuleNotFoundError:  # python-dotenv is optional at runtime
-    pass
-else:
-    load_dotenv()
+from dotenv import load_dotenv
 
-
-def _snowflake(name: str, default: int) -> int:
-    raw = os.environ.get(name)
-    if not raw or not raw.strip():
-        return default
-    try:
-        return int(raw)
-    except ValueError as exc:
-        raise RuntimeError(f"{name} must be a Discord ID (integer), got {raw!r}") from exc
+load_dotenv()
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,14 +30,14 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        raw_token = os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN")
+        raw_token = os.environ.get("DISCORD_TOKEN")
         return cls(
             # A .env created with CRLF line endings (e.g. on Windows, then run
             # through Docker's env_file on Linux) leaves a trailing \r on the
             # value that discord.py rejects as "Improper token has been passed".
             token=raw_token.strip() if raw_token else raw_token,
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
-            owner_user_id=_snowflake("OWNER_USER_ID", 307688449811415041),
+            owner_user_id=int(os.environ.get("OWNER_USER_ID", "").strip() or 307688449811415041),
         )
 
 
