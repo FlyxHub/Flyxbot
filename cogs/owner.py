@@ -42,13 +42,21 @@ class Owner(commands.Cog):
         `>sync` fixes it: a global sync already overwrites the whole global set.
         """
         if not guilds:
+            tree = ctx.bot.tree
             target = None if spec in (None, "!") else ctx.guild
+            # The global tree is where the cogs registered their commands, so
+            # clearing it would leave the next `>sync` with nothing to push.
+            kept = tree.get_commands() if spec == "!" else []
             match spec:
                 case "*":
-                    ctx.bot.tree.copy_global_to(guild=target)
+                    tree.copy_global_to(guild=target)
                 case "^" | "!":
-                    ctx.bot.tree.clear_commands(guild=target)
-            synced = await ctx.bot.tree.sync(guild=target)
+                    tree.clear_commands(guild=target)
+            try:
+                synced = await tree.sync(guild=target)
+            finally:
+                for command in kept:
+                    tree.add_command(command)
 
             where = "globally" if target is None else "to the current guild"
             await ctx.send(f"Synced {len(synced)} commands {where}.")
