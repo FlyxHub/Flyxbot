@@ -51,7 +51,7 @@ touches the system goes through `run`, and a bare command substitution outside i
 (`dpkg --print-architecture`) still executes - keep those side-effect free.
 
 The bot needs `DISCORD_TOKEN` in the environment or in a `.env` file. `config.py`
-loads `.env` automatically if `python-dotenv` is installed; `bot.py` exits with a
+loads `.env` automatically; `bot.py` exits with a
 readable message if no token is found.
 
 ## Architecture

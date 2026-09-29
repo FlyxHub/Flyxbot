@@ -14,12 +14,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-try:
-    from dotenv import load_dotenv
-except ModuleNotFoundError:  # python-dotenv is optional at runtime
-    pass
-else:
-    load_dotenv()
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def _snowflake(name: str, default: int) -> int:
