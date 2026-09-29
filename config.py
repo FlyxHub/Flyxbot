@@ -19,16 +19,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def _snowflake(name: str, default: int) -> int:
-    raw = os.environ.get(name)
-    if not raw or not raw.strip():
-        return default
-    try:
-        return int(raw)
-    except ValueError as exc:
-        raise RuntimeError(f"{name} must be a Discord ID (integer), got {raw!r}") from exc
-
-
 @dataclass(frozen=True, slots=True)
 class Settings:
     """Immutable snapshot of the environment, built once at import time."""
@@ -47,7 +37,7 @@ class Settings:
             # value that discord.py rejects as "Improper token has been passed".
             token=raw_token.strip() if raw_token else raw_token,
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
-            owner_user_id=_snowflake("OWNER_USER_ID", 307688449811415041),
+            owner_user_id=int(os.environ.get("OWNER_USER_ID", "").strip() or 307688449811415041),
         )
 
 
