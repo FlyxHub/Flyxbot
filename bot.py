@@ -19,7 +19,7 @@ log = logging.getLogger("flyxbot")
 COGS_DIR = Path(__file__).parent / "cogs"
 
 #: Errors that are noise rather than something the user needs to hear about.
-SILENT_ERRORS = (commands.CommandNotFound, commands.DisabledCommand)
+SILENT_ERRORS = commands.CommandNotFound
 
 
 def _from_api_error(exc: BaseException) -> str | None:
