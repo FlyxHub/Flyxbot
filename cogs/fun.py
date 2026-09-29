@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import discord
 from discord import app_commands
@@ -19,9 +19,20 @@ YES_EMOJI = "\N{WHITE HEAVY CHECK MARK}"
 NO_EMOJI = "\N{NEGATIVE SQUARED CROSS MARK}"
 
 
-def lost_roulette() -> bool:
-    """True once every :data:`ROULETTE_SIDES` calls, on average."""
-    return random.randint(1, ROULETTE_SIDES) == ROULETTE_SIDES
+async def play_roulette(
+    ctx: commands.Context, member: discord.Member, action: Literal["kick", "ban"]
+) -> None:
+    """Spin once; on the losing face, kick or ban ``member``."""
+    if random.randint(1, ROULETTE_SIDES) != ROULETTE_SIDES:
+        await ctx.send(f"*click* - {member.mention} lives to see another day.")
+        return
+
+    done = {"kick": "kicked", "ban": "banned"}[action]
+    await ctx.send(f"{member.mention} lost {action} roulette and was {done}.")
+    if action == "kick":
+        await member.kick(reason="Lost kick roulette.")
+    else:
+        await member.ban(reason="Lost ban roulette.", delete_message_seconds=0)
 
 
 class Fun(commands.Cog):
@@ -51,20 +62,12 @@ class Fun(commands.Cog):
     @roulette.command(description="Play a game of kick roulette.")
     @commands.guild_only()
     async def kick(self, ctx: commands.Context) -> None:
-        if not lost_roulette():
-            await ctx.send(f"*click* - {ctx.author.mention} lives to see another day.")
-            return
-        await ctx.send(f"{ctx.author.mention} lost kick roulette and was kicked.")
-        await ctx.guild.kick(ctx.author, reason="Lost kick roulette.")
+        await play_roulette(ctx, ctx.author, "kick")
 
     @roulette.command(description="Play a game of ban roulette.")
     @commands.guild_only()
     async def ban(self, ctx: commands.Context) -> None:
-        if not lost_roulette():
-            await ctx.send(f"*click* - {ctx.author.mention} lives to see another day.")
-            return
-        await ctx.send(f"{ctx.author.mention} lost ban roulette and was banned.")
-        await ctx.guild.ban(ctx.author, reason="Lost ban roulette.", delete_message_seconds=0)
+        await play_roulette(ctx, ctx.author, "ban")
 
     @commands.hybrid_command()
     async def coinflip(self, ctx: commands.Context) -> None:
