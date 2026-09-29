@@ -71,16 +71,23 @@ class Flashback(commands.Cog):
         today = dt.datetime.now(TZ).date()
         # An uncaught error would stop the loop for good, not just skip today.
         try:
-            for years, start, end in past_days(today, source.created_at.astimezone(TZ).year):
+            days = past_days(today, source.created_at.astimezone(TZ).year)
+            if not days:
+                log.info("Flashback: #%s was created this year, so there's no past to show", source)
+            for years, start, end in days:
                 # ponytail: reads the whole day to pick one; fine until a day holds thousands.
-                messages = [
-                    m
-                    async for m in source.history(after=start, before=end, limit=None)
-                    if not m.author.bot
-                ]
-                if messages:
-                    await target.send(embed=flashback_embed(random.choice(messages), years))
-                    posted += 1
+                fetched = [m async for m in source.history(after=start, before=end, limit=None)]
+                messages = [m for m in fetched if not m.author.bot]
+                if not messages:
+                    log.info(
+                        "Flashback: no messages from people in #%s on %s (%d from bots)",
+                        source,
+                        start.date(),
+                        len(fetched),
+                    )
+                    continue
+                await target.send(embed=flashback_embed(random.choice(messages), years))
+                posted += 1
         except discord.HTTPException:
             log.exception("Flashback failed")
         return posted
