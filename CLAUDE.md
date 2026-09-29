@@ -89,7 +89,7 @@ invocations. Owner commands (`sync`, `reload`) are prefix-only by design.
 both routed through `friendly_error()`, which pattern-matches the discord.py error
 hierarchy and returns a user-facing string (or `None` for "unexpected", which gets
 logged with a traceback). Ordering inside that `match` matters: subclasses must come
-before their bases (`MemberNotFound` before `BadArgument`, `MissingPermissions` before
+before their bases (`MemberNotFound` before `UserInputError`, `MissingPermissions` before
 `CheckFailure`). New commands should not add their own `@cmd.error` handler — the global
 handler skips any command or cog that defines one.
 
