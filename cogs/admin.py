@@ -17,20 +17,6 @@ from discord.ext import commands
 if TYPE_CHECKING:
     from bot import Flyxbot
 
-ACTIVITY_TYPES: dict[str, discord.ActivityType] = {
-    "playing": discord.ActivityType.playing,
-    "watching": discord.ActivityType.watching,
-    "listening": discord.ActivityType.listening,
-    "competing": discord.ActivityType.competing,
-}
-
-STATUSES: dict[str, discord.Status] = {
-    "online": discord.Status.online,
-    "idle": discord.Status.idle,
-    "dnd": discord.Status.dnd,
-    "invisible": discord.Status.invisible,
-}
-
 
 def is_guild_owner():
     async def predicate(ctx: commands.Context) -> bool:
@@ -60,8 +46,10 @@ class Admin(commands.Cog):
         text: str | None = None,
     ) -> None:
         """Sets the bot's online status and activity"""
-        activity = discord.Activity(type=ACTIVITY_TYPES[activity_type], name=text) if text else None
-        await self.bot.change_presence(status=STATUSES[presence], activity=activity)
+        activity = (
+            discord.Activity(type=discord.ActivityType[activity_type], name=text) if text else None
+        )
+        await self.bot.change_presence(status=discord.Status[presence], activity=activity)
 
         if activity is not None:
             await ctx.send(f"Status set to {presence}, {activity_type} **{text}**.")
