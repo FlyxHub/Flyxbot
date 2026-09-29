@@ -59,13 +59,15 @@ class Flashback(commands.Cog):
         self.post.cancel()
 
     @tasks.loop(time=dt.time(9, tzinfo=TZ))
-    async def post(self) -> None:
+    async def post(self) -> int:
+        """Post today's flashbacks and return how many went out."""
         source = self.bot.get_channel(settings.flashback_channel_id)
         target = self.bot.get_channel(settings.flashback_target_channel_id)
         if not all(isinstance(c, discord.abc.Messageable) for c in (source, target)):
             log.warning("Flashback channels not found; check the FLASHBACK_* IDs in .env")
-            return
+            return 0
 
+        posted = 0
         today = dt.datetime.now(TZ).date()
         # An uncaught error would stop the loop for good, not just skip today.
         try:
@@ -78,8 +80,17 @@ class Flashback(commands.Cog):
                 ]
                 if messages:
                     await target.send(embed=flashback_embed(random.choice(messages), years))
+                    posted += 1
         except discord.HTTPException:
             log.exception("Flashback failed")
+        return posted
+
+    @commands.command(name="flashback")
+    @commands.is_owner()
+    async def flashback_now(self, ctx: commands.Context) -> None:
+        """Run today's Channel Flashback now instead of waiting for 9AM."""
+        posted = await self.post()
+        await ctx.send(f"Posted {posted} flashback(s). Check the log if you expected more.")
 
     @post.before_loop
     async def before_post(self) -> None:

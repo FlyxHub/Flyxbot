@@ -534,6 +534,7 @@ These are text commands only. They have no slash equivalent.
 | --- | --- |
 | `>sync [*\|^\|!]` | Registers slash commands. See [Register the slash commands](#register-the-slash-commands). |
 | `>reload <extension>` | Reloads one cog without restarting, for example `>reload cogs.fun`. |
+| `>flashback` | Runs today's Channel Flashback now instead of waiting for 9AM. Only available when Channel Flashback is configured. |
 
 ## Update to a new version
 

@@ -85,7 +85,7 @@ another setting that names a role, channel, or guild without that same reason.
 `commands.hybrid_command`, reachable both as `>name` and as a slash command. The
 `roulette` and `sm` groups are `hybrid_group(invoke_without_command=True)` —
 without that flag the parent callback fires *in addition to* the subcommand on prefix
-invocations. Owner commands (`sync`, `reload`) are prefix-only by design.
+invocations. Owner commands (`sync`, `reload`, `flashback`) are prefix-only by design.
 
 **Error handling is global.** `bot.py` has one `on_command_error` plus a `tree.on_error`,
 both routed through `friendly_error()`, which pattern-matches the discord.py error
