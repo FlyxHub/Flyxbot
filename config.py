@@ -30,7 +30,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        raw_token = os.environ.get("DISCORD_TOKEN") or os.environ.get("TOKEN")
+        raw_token = os.environ.get("DISCORD_TOKEN")
         return cls(
             # A .env created with CRLF line endings (e.g. on Windows, then run
             # through Docker's env_file on Linux) leaves a trailing \r on the
