@@ -38,28 +38,19 @@ class Owner(commands.Cog):
         synced individually.
 
         Duplicate slash commands in a guild usually mean commands got registered
-        both globally and to that guild (e.g. after a `*` sync). Clear both layers
-        and resync fresh: `>sync ^` then `>sync !` then `>sync`.
+        both globally and to that guild (e.g. after a `*` sync). `>sync ^` then
+        `>sync` fixes it: a global sync already overwrites the whole global set.
         """
         if not guilds:
+            target = None if spec in (None, "!") else ctx.guild
             match spec:
-                case "~":
-                    synced = await ctx.bot.tree.sync(guild=ctx.guild)
                 case "*":
-                    ctx.bot.tree.copy_global_to(guild=ctx.guild)
-                    synced = await ctx.bot.tree.sync(guild=ctx.guild)
-                case "^":
-                    ctx.bot.tree.clear_commands(guild=ctx.guild)
-                    await ctx.bot.tree.sync(guild=ctx.guild)
-                    synced = []
-                case "!":
-                    ctx.bot.tree.clear_commands(guild=None)
-                    await ctx.bot.tree.sync()
-                    synced = []
-                case _:
-                    synced = await ctx.bot.tree.sync()
+                    ctx.bot.tree.copy_global_to(guild=target)
+                case "^" | "!":
+                    ctx.bot.tree.clear_commands(guild=target)
+            synced = await ctx.bot.tree.sync(guild=target)
 
-            where = "globally" if spec in (None, "!") else "to the current guild"
+            where = "globally" if target is None else "to the current guild"
             await ctx.send(f"Synced {len(synced)} commands {where}.")
             return
 
