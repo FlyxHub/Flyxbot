@@ -370,7 +370,7 @@ ${C_GREEN}${C_BOLD}Docker is installed.${C_OFF}
   2. Enable the Server Members and Message Content intents in the
      Discord Developer Portal (Bot -> Privileged Gateway Intents)
   3. Start it:  ${C_BOLD}cd $REPO_ROOT && docker compose up -d${C_OFF}
-  4. In Discord, run ${C_BOLD}>sync ~${C_OFF} once to register the slash commands
+  4. In Discord, run ${C_BOLD}>sync${C_OFF} once to register the slash commands
 
   Follow the log with ${C_BOLD}docker compose logs -f${C_OFF}.
 SUMMARY
@@ -420,7 +420,7 @@ ${C_GREEN}${C_BOLD}Flyxbot is installed.${C_OFF}
   2. Enable the Server Members and Message Content intents in the
      Discord Developer Portal (Bot -> Privileged Gateway Intents)
   3. Start it:  ${C_BOLD}cd $REPO_ROOT && .venv/bin/python bot.py${C_OFF}
-  4. In Discord, run ${C_BOLD}>sync ~${C_OFF} once to register the slash commands
+  4. In Discord, run ${C_BOLD}>sync${C_OFF} once to register the slash commands
 SUMMARY
 
     if [ "$WITH_SYSTEMD" -eq 1 ]; then

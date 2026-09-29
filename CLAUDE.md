@@ -62,7 +62,7 @@ readable message if no token is found.
 
 **Command tree is never auto-synced.** Syncing globally on each startup wastes rate
 limits, so `cogs/owner.py` owns a prefix-only `sync` command (owner-gated, the standard
-Umbra recipe). Any change to a command signature needs a manual `>sync ~`.
+Umbra recipe). Any change to a command signature needs a manual `>sync`.
 
 **Configuration.** All guild IDs live in `config.py` as a frozen `Settings` dataclass
 read from the environment. Never hardcode a snowflake in a cog — add a field to

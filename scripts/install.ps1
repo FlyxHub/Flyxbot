@@ -232,7 +232,7 @@ function Main {
     Write-Host '  2. Enable the Server Members and Message Content intents in the'
     Write-Host '     Discord Developer Portal (Bot -> Privileged Gateway Intents)'
     Write-Host "  3. Start it:  cd $RepoRoot; .venv\Scripts\python.exe bot.py"
-    Write-Host '  4. In Discord, run >sync ~ once to register the slash commands'
+    Write-Host '  4. In Discord, run >sync once to register the slash commands'
 }
 
 Main
