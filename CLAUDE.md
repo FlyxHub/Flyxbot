@@ -91,7 +91,7 @@ hierarchy and returns a user-facing string (or `None` for "unexpected", which ge
 logged with a traceback). Ordering inside that `match` matters: subclasses must come
 before their bases (`MemberNotFound` before `UserInputError`, `MissingPermissions` before
 `CheckFailure`). New commands should not add their own `@cmd.error` handler — the global
-handler skips any command or cog that defines one.
+handler still runs too, so the user would get two replies.
 
 **Adding a command** means dropping a `.py` file in `cogs/` with a `commands.Cog`
 subclass and an `async def setup(bot)`. No registration list to update.

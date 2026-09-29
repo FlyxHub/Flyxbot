@@ -92,10 +92,6 @@ class Flyxbot(commands.Bot):
         """One handler for every command; individual commands don't need their own."""
         if isinstance(error, SILENT_ERRORS):
             return
-        if ctx.command is not None and ctx.command.has_error_handler():
-            return
-        if ctx.cog is not None and ctx.cog.has_error_handler():
-            return
 
         message = friendly_error(error)
         if message is None:
