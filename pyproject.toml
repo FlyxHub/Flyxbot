@@ -7,6 +7,8 @@ requires-python = ">=3.11"
 dependencies = [
     "discord.py>=2.7,<3",
     "python-dotenv>=1.0",
+    # zoneinfo has no timezone database of its own on Windows or in slim images.
+    "tzdata",
 ]
 
 [project.optional-dependencies]

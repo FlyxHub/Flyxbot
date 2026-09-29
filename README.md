@@ -347,11 +347,20 @@ Only `DISCORD_TOKEN` is required. Every other setting has a working default.
 | `DISCORD_TOKEN` | *(none)* | The bot token. Required. |
 | `COMMAND_PREFIX` | `>` | The prefix for text commands. Mentioning the bot always works as a prefix too. |
 | `OWNER_USER_ID` | `307688449811415041` | The user who receives DM alerts about edited and deleted messages that mention them. |
+| `FLASHBACK_CHANNEL_ID` | *(none)* | Channel Flashback reads old messages from this channel. |
+| `FLASHBACK_TARGET_CHANNEL_ID` | *(none)* | Channel Flashback posts to this channel. |
+| `FLASHBACK_TIMEZONE` | `UTC` | The timezone for Channel Flashback, for example `America/Chicago`. |
 
 Every command works in any server as soon as the bot is invited - they all gate on
-Discord permissions and read their targets from the invocation. `OWNER_USER_ID` is
-the only ID left, and it names a user rather than anything in your server, so set it
-to your own account if you want the DM alerts.
+Discord permissions and read their targets from the invocation. `OWNER_USER_ID`
+names a user rather than anything in your server, so set it to your own account if
+you want the DM alerts.
+
+**Channel Flashback** is off until both `FLASHBACK_*_CHANNEL_ID` settings are set.
+Every day at 9AM in `FLASHBACK_TIMEZONE`, the bot picks one random message sent on
+today's date in each earlier year, and posts each one as an embed in the target
+channel. Messages from bots are skipped. The bot needs **Read Message History** in
+the source channel, and **Send Messages** and **Embed Links** in the target.
 
 > [!TIP]
 > To find an ID, turn on **User Settings > Advanced > Developer Mode** in Discord.

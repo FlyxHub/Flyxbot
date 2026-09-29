@@ -75,9 +75,11 @@ by every guild the bot is in, so it can only ever be correct in one of them. Res
 configured role ID: a `commands.has_role(id)` check is bound at import time and locks the
 command out of every other guild, including for its owner.
 
-`owner_user_id` is the only configured snowflake left, and it names a user rather than
-anything inside a guild, so the bot works in any server with no setup beyond the invite.
-Keep it that way: a new setting that names a role, channel, or guild is a regression.
+`owner_user_id` names a user rather than anything inside a guild, so the bot works in
+any server with no setup beyond the invite. The one deliberate exception is Channel
+Flashback (`cogs/flashback.py`): a scheduled task has no `ctx` to resolve from, so its
+two channels come from `.env`, and the cog doesn't load unless both are set. Don't add
+another setting that names a role, channel, or guild without that same reason.
 
 **Command surface.** Prefix is `>` (or a bot mention) and nearly everything is a
 `commands.hybrid_command`, reachable both as `>name` and as a slash command. The

@@ -19,6 +19,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _id(name: str) -> int | None:
+    raw = os.environ.get(name, "").strip()
+    return int(raw) if raw else None
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     """Immutable snapshot of the environment, built once at import time."""
@@ -27,6 +32,11 @@ class Settings:
     command_prefix: str
     #: User who gets DM alerts when a message mentioning them is edited/deleted.
     owner_user_id: int
+    #: Channel Flashback reads from the first and posts to the second; off unless both are set.
+    flashback_channel_id: int | None
+    flashback_target_channel_id: int | None
+    #: IANA zone name for flashback's 9AM post and its day boundaries.
+    flashback_timezone: str
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -37,7 +47,10 @@ class Settings:
             # value that discord.py rejects as "Improper token has been passed".
             token=raw_token.strip() if raw_token else raw_token,
             command_prefix=os.environ.get("COMMAND_PREFIX", ">"),
-            owner_user_id=int(os.environ.get("OWNER_USER_ID", "").strip() or 307688449811415041),
+            owner_user_id=_id("OWNER_USER_ID") or 307688449811415041,
+            flashback_channel_id=_id("FLASHBACK_CHANNEL_ID"),
+            flashback_target_channel_id=_id("FLASHBACK_TARGET_CHANNEL_ID"),
+            flashback_timezone=os.environ.get("FLASHBACK_TIMEZONE", "").strip() or "UTC",
         )
 
 
